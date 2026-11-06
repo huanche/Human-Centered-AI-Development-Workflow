@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture-review.schema.json",
+  "title": "HC-AIDW 架构与实施方案审核文档",
+  "description": "方案审核界面 B 的唯一事实源。图本体复用 Archify schema(architecture/sequence/erd/dataflow),本信封只承载审核特有信息并引用图文件。",
+  "type": "object",
+  "required": ["schema_version", "type", "status", "requirement_ref", "proposed", "options", "recommended", "steps", "risks", "feedback"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "type": { "const": "architecture-review" },
+    "title": { "type": "string" },
+    "status": { "enum": ["draft", "under-review", "confirmed"] },
+    "requirement_ref": {
+      "type": "string",
+      "description": "对应的已确认 requirement-review 文档路径——方案必须源自已确认的需求"
+    },
+    "current": {
+      "type": "object",
+      "description": "现状架构",
+      "properties": {
+        "summary": { "type": "string", "description": "一两句人话描述现状" },
+        "arch_ref": { "type": "string", "description": "Archify architecture JSON 文件路径" },
+        "dataflow_ref": { "type": "string", "description": "Archify dataflow/sequence JSON 路径(可选)" }
+      }
+    },
+    "proposed": {
+      "type": "object",
+      "required": ["summary"],
+      "description": "改造后架构",
+      "properties": {
+        "summary": { "type": "string" },
+        "arch_ref": { "type": "string", "description": "Archify architecture JSON(改造后)路径" },
+        "dataflow_ref": { "type": "string" },
+        "diff_highlights": {
+          "type": "array",
+          "description": "前后变化点,每条一句话(新增/删除/修改),渲染为 diff 高亮",
+          "items": {
+            "type": "object",
+            "required": ["change"],
+            "properties": {
+              "change": { "type": "string" },
+              "kind": { "enum": ["add", "remove", "modify"] },
+              "why": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "description": "模块职责说明(供界面点击模块时展示)",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "responsibility"],
+        "properties": {
+          "id": { "type": "string", "description": "与 Archify 图中节点 id 对应" },
+          "name": { "type": "string" },
+          "responsibility": { "type": "string", "description": "一句话:这个模块负责什么差事" },
+          "provides": { "type": "array", "items": { "type": "string" }, "description": "对外提供什么" },
+          "depends_on": { "type": "array", "items": { "type": "string" }, "description": "依赖哪些模块(id)" },
+          "source_evidence": { "type": "array", "items": { "type": "string" }, "description": "源码位置(文件:行)" }
+        }
+      }
+    },
+    "options": {
+      "type": "array",
+      "minItems": 1,
+      "description": "候选方案(至少包含推荐方案本身)",
+      "items": {
+        "type": "object",
+        "required": ["id", "summary", "pros", "cons"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z]$" },
+          "summary": { "type": "string", "description": "方案一句话" },
+          "sketch_ref": { "type": "string", "description": "该方案的 Archify 图(可选)" },
+          "pros": { "type": "array", "items": { "type": "string" } },
+          "cons": { "type": "array", "items": { "type": "string" } },
+          "evidence": {
+            "type": "array",
+            "description": "支撑优缺点的证据(基准测试/文档/代码),没有证据的判断须在文本中注明是推断",
+            "items": { "type": "string" }
+          },
+          "rejected_because": { "type": "string", "description": "未入选原因(仅被否方案填写)" }
+        }
+      }
+    },
+    "recommended": { "type": "string", "description": "推荐方案 id" },
+    "recommended_reason": {
+      "type": "string",
+      "description": "为什么推荐它——用人话讲给非技术用户听"
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "description": "实施步骤时间线",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "modules", "acceptance"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string" },
+          "modules": { "type": "array", "items": { "type": "string" }, "description": "涉及的模块 id" },
+          "acceptance": { "type": "string", "description": "验收标准:做到什么程度算完成" },
+          "files_touched": { "type": "array", "items": { "type": "string" }, "description": "预计改动文件(实施后与实际 diff 比对)" },
+          "done": { "type": "boolean" }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "description": "风险清单。verdict 三态借自 cloudflare/security-audit-skill 协议:未经独立复核一律 needs_validation",
+      "items": {
+        "type": "object",
+        "required": ["desc", "verdict", "mitigation"],
+        "properties": {
+          "desc": { "type": "string" },
+          "probability": { "enum": ["low", "medium", "high"] },
+          "impact": { "enum": ["low", "medium", "high"] },
+          "verdict": {
+            "enum": ["confirmed", "needs_validation", "refuted"],
+            "description": "confirmed=有证据且经独立复核;needs_validation=未经复核;refuted=已证伪"
+          },
+          "evidence": { "type": "array", "items": { "type": "string" } },
+          "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "feedback": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target", "comment"],
+        "properties": {
+          "target": { "type": "string", "description": "锚定节点:模块 id/方案 id/步骤 id/风险序号" },
+          "comment": { "type": "string" },
+          "resolved": { "type": "boolean" }
+        }
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["term", "plain"],
+        "properties": { "term": { "type": "string" }, "plain": { "type": "string" } }
+      }
+    }
+  }
+}

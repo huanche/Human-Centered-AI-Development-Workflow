@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "type": "requirement-review",
+  "title": "示例:作业提交截止提醒",
+  "status": "draft",
+  "restatement": {
+    "one_liner": "老师布置作业时能设一个截止时间,快到还没交的学生会收到提醒。",
+    "in_scope": ["布置作业时可选填截止时间", "截止前 24 小时自动提醒未交学生"],
+    "out_of_scope": ["提醒老师本人", "逾期后的补交流程(另立需求)"],
+    "source_ref": "用户 2026-11-06 原话:'学生老忘交作业,得有个提醒'"
+  },
+  "actors": [
+    {
+      "id": "teacher",
+      "name": "教师",
+      "goal": "少花时间催作业",
+      "pain_points": ["每天在群里挨个点名催"],
+      "journey": ["布置作业时填截止时间", "之后不用管"],
+      "source_ref": "用户原话:'我布置完就不想再管了'"
+    },
+    {
+      "id": "student",
+      "name": "学生",
+      "goal": "不因为忘记而丢分",
+      "journey": ["收到提醒", "去交作业"]
+    }
+  ],
+  "flows": [
+    {
+      "id": "remind",
+      "name": "截止前提醒",
+      "steps": [
+        { "id": "s1", "actor": "teacher", "action": "布置作业并设置截止时间", "input": "作业内容+截止时间", "output": "作业记录", "exceptions": ["没填截止时间则不提醒"], "source_ref": "用户原话" },
+        { "id": "s2", "actor": "student", "action": "截止前 24 小时收到提醒", "output": "站内提醒消息", "exceptions": ["已交则不提醒"], "source_ref": "用户原话:'提前一天说一声就行'" }
+      ]
+    }
+  ],
+  "prototype": {
+    "screens": [
+      {
+        "id": "assign",
+        "name": "布置作业页",
+        "elements": [
+          { "kind": "heading", "label": "布置作业" },
+          { "kind": "input", "label": "作业说明" },
+          { "kind": "input", "label": "截止时间(可选)", "note": "新增控件" },
+          { "kind": "button", "label": "发布", "goes_to": "done" }
+        ]
+      },
+      { "id": "done", "name": "发布成功", "elements": [ { "kind": "text", "label": "已发布,截止前会自动提醒学生" } ] }
+    ]
+  },
+  "expected_effect": {
+    "current": "老师手动催交,学生靠自觉",
+    "after": "系统在截止前 24 小时自动提醒未交学生",
+    "source_ref": "用户原话"
+  },
+  "open_questions": [
+    {
+      "id": "q1",
+      "question": "提醒发到哪里?",
+      "context": "现有站内消息和微信公众号两个渠道",
+      "options": [
+        { "label": "仅站内提醒", "recommended": true, "reason": "一期工程量小,公众号模板消息要申请资质" },
+        { "label": "站内+公众号", "reason": "触达更广,但接入成本高" }
+      ],
+      "answer": null
+    }
+  ],
+  "feedback": [],
+  "glossary": [
+    { "term": "截止时间(deadline)", "plain": "最晚什么时候交" }
+  ]
+}

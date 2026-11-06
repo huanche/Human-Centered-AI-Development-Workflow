@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "requirement-review.schema.json",
+  "title": "HC-AIDW 需求理解审核文档",
+  "description": "AI 对需求的完整结构化理解,是非技术人员审核界面 A 的唯一事实源。所有结论字段必须携带证据(source_ref)或标 needs_validation。",
+  "type": "object",
+  "required": ["schema_version", "type", "status", "restatement", "actors", "flows", "open_questions", "feedback"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "type": { "const": "requirement-review" },
+    "title": { "type": "string", "description": "本需求的简短标题" },
+    "status": {
+      "enum": ["draft", "under-review", "confirmed"],
+      "description": "draft=AI 初稿;under-review=用户正在审核;confirmed=用户已确认,是后续架构与代码节点的输入"
+    },
+    "restatement": {
+      "type": "object",
+      "required": ["one_liner"],
+      "properties": {
+        "one_liner": { "type": "string", "description": "AI 对需求的一句话理解,用人话,不用术语" },
+        "in_scope": { "type": "array", "items": { "type": "string" }, "description": "本次做什么(每条一句)" },
+        "out_of_scope": { "type": "array", "items": { "type": "string" }, "description": "本次明确不做什么——防止范围蔓延" },
+        "source_ref": { "type": "string", "description": "理解所依据的用户原话/文档出处" }
+      }
+    },
+    "actors": {
+      "type": "array",
+      "minItems": 1,
+      "description": "用户角色列表",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "goal"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string", "description": "角色名,用业务语言(如:教师、学生)" },
+          "goal": { "type": "string", "description": "这个角色想达成什么" },
+          "pain_points": { "type": "array", "items": { "type": "string" } },
+          "journey": {
+            "type": "array",
+            "description": "该角色典型使用路径(按时间顺序)",
+            "items": { "type": "string" }
+          },
+          "source_ref": { "type": "string" }
+        }
+      }
+    },
+    "flows": {
+      "type": "array",
+      "minItems": 1,
+      "description": "业务流程,每条流程由多个步骤组成",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "steps"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string" },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "actor", "action"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+                "actor": { "type": "string", "description": "执行该步骤的角色 id" },
+                "action": { "type": "string", "description": "做什么,一句话" },
+                "input": { "type": "string" },
+                "output": { "type": "string" },
+                "exceptions": {
+                  "type": "array",
+                  "description": "出错/例外分支——需求审核最容易遗漏的部分",
+                  "items": { "type": "string" }
+                },
+                "source_ref": { "type": "string", "description": "该步骤依据的用户原话/文档出处" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "prototype": {
+      "type": "object",
+      "description": "低保真线框原型描述(界面 A 渲染为可点击 HTML,不接真数据)",
+      "properties": {
+        "screens": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "elements"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "name": { "type": "string" },
+              "elements": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["kind", "label"],
+                  "properties": {
+                    "kind": { "enum": ["heading", "text", "button", "input", "list", "card", "link"] },
+                    "label": { "type": "string" },
+                    "goes_to": { "type": "string", "description": "点击后跳转到的 screen id(button/link 用)" },
+                    "note": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "expected_effect": {
+      "type": "object",
+      "description": "预期效果(现状 vs 改造后)",
+      "properties": {
+        "current": { "type": "string", "description": "现在是什么样" },
+        "after": { "type": "string", "description": "做完后是什么样" },
+        "source_ref": { "type": "string" }
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "description": "待用户确认的问题。规则:需要用户决策的才列这里;事实性问题 AI 应自查。每题带推荐选项。",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "options"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^q[0-9]+$" },
+          "question": { "type": "string" },
+          "context": { "type": "string", "description": "为什么问这个(背景一句话)" },
+          "options": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "required": ["label"],
+              "properties": {
+                "label": { "type": "string" },
+                "recommended": { "type": "boolean", "description": "AI 推荐,须能被用户一眼看懂理由" },
+                "reason": { "type": "string" }
+              }
+            }
+          },
+          "answer": {
+            "type": ["string", "null"],
+            "description": "用户作答(选 option label 或自由填写);null=未答"
+          }
+        }
+      }
+    },
+    "feedback": {
+      "type": "array",
+      "description": "用户审核意见,必须锚定到具体元素(target=对应节点 id)",
+      "items": {
+        "type": "object",
+        "required": ["target", "comment"],
+        "properties": {
+          "target": { "type": "string", "description": "意见锚定的节点 id(流程步骤/角色/原型元素/问题 id)" },
+          "comment": { "type": "string" },
+          "resolved": { "type": "boolean", "description": "AI 是否已按意见修改并重新渲染" }
+        }
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "description": "术语翻译表:技术概念 → 人话(随审核轮次积累)",
+      "items": {
+        "type": "object",
+        "required": ["term", "plain"],
+        "properties": {
+          "term": { "type": "string" },
+          "plain": { "type": "string" }
+        }
+      }
+    }
+  }
+}

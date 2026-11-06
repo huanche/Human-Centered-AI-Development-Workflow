@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verification-report.schema.json",
+  "title": "HC-AIDW 代码生成结果核验报告",
+  "description": "核验界面 C 的唯一事实源。核心是勾稽表:已确认需求/方案的每一条都必须在实现里有着落,实现超出确认范围的部分也必须列出。",
+  "type": "object",
+  "required": ["schema_version", "type", "requirement_ref", "architecture_ref", "change_summary", "traceability", "tests", "open_items", "verdicts"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "type": { "const": "verification-report" },
+    "title": { "type": "string" },
+    "requirement_ref": { "type": "string", "description": "已确认 requirement-review 文档路径" },
+    "architecture_ref": { "type": "string", "description": "已确认 architecture-review 文档路径" },
+    "implementation_ref": { "type": "string", "description": "本次实现的 commit/PR/分支" },
+    "change_summary": {
+      "type": "array",
+      "description": "代码变更摘要,按模块分组,每模块一句话说明改了什么、为什么(引用方案步骤)",
+      "items": {
+        "type": "object",
+        "required": ["module", "what"],
+        "properties": {
+          "module": { "type": "string" },
+          "what": { "type": "string" },
+          "why_step_ref": { "type": "string", "description": "对应 architecture-review 里的步骤 id" },
+          "diff_stat": { "type": "string", "description": "如 +120/-45" }
+        }
+      }
+    },
+    "traceability": {
+      "type": "array",
+      "description": "勾稽表:确认版需求/方案的每条 ↔ 实现位置",
+      "items": {
+        "type": "object",
+        "required": ["requirement_item", "status"],
+        "properties": {
+          "requirement_item": { "type": "string", "description": "需求条目(flow step id 或原文)" },
+          "status": { "enum": ["implemented", "partial", "not-implemented", "deferred"] },
+          "implementation": {
+            "type": "array",
+            "description": "实现位置(文件:函数/行)",
+            "items": { "type": "string" }
+          },
+          "note": { "type": "string", "description": "partial/not 时解释差在哪、为什么不现在补" }
+        }
+      }
+    },
+    "extras": {
+      "type": "array",
+      "description": "实现超出已确认范围的清单——反向勾稽,防止 AI 擅自加料",
+      "items": {
+        "type": "object",
+        "required": ["what"],
+        "properties": {
+          "what": { "type": "string" },
+          "location": { "type": "string" },
+          "reason": { "type": "string", "description": "为什么会做这个(实施中的发现?)、" },
+          "user_decision_needed": { "type": "boolean" }
+        }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "required": ["passed", "failed"],
+      "properties": {
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "new_tests": { "type": "array", "items": { "type": "string" } },
+        "failures_detail": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "why"],
+            "properties": {
+              "name": { "type": "string" },
+              "why": { "type": "string" }
+            }
+          }
+        },
+        "manual_run": { "type": "string", "description": "人工/脚本实际运行验证的记录(run skill 产物)" }
+      }
+    },
+    "open_items": {
+      "type": "array",
+      "description": "未解决问题清单",
+      "items": {
+        "type": "object",
+        "required": ["desc", "follow_up"],
+        "properties": {
+          "desc": { "type": "string" },
+          "why_not_now": { "type": "string" },
+          "follow_up": { "type": "string", "description": "跟进方式(issue/下次迭代/丢弃)" }
+        }
+      }
+    },
+    "verdicts": {
+      "type": "array",
+      "description": "审查结论(汇总内置/插件 code-review、drift-report、安全审查的结果),三态 verdict 协议",
+      "items": {
+        "type": "object",
+        "required": ["reviewer", "verdict"],
+        "properties": {
+          "reviewer": { "type": "string", "description": "如: code-review(built-in) / code-review(standards+spec) / egm-drift-report / security-review" },
+          "verdict": { "enum": ["confirmed", "needs_validation", "refuted"] },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["desc", "severity"],
+              "properties": {
+                "desc": { "type": "string" },
+                "severity": { "enum": ["info", "minor", "major", "critical"] },
+                "location": { "type": "string" },
+                "evidence": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
