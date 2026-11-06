@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>需求审核 · 编程实验模块</title>
+<style>
+  :root { --ink:#1a2332; --muted:#5a6a7e; --line:#dde4ec; --bg:#f6f8fb; --card:#fff;
+          --green:#0a7d4f; --green-bg:#e8f5ee; --amber:#b45309; --amber-bg:#fdf3e3;
+          --red:#b3251e; --red-bg:#fdecea; --blue:#0b5cad; --blue-bg:#e8f1fa; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+         color:var(--ink); background:var(--bg); line-height:1.7; font-size:15px; }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 20px 80px; }
+  header { border-bottom:3px solid var(--blue); padding-bottom:16px; margin-bottom:8px; }
+  h1 { font-size:26px; margin:0 0 6px; }
+  .meta { color:var(--muted); font-size:13.5px; }
+  .badge { display:inline-block; padding:2px 12px; border-radius:20px; font-size:13px; font-weight:600; }
+  .b-review { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); }
+  h2 { font-size:20px; margin:44px 0 6px; border-left:4px solid var(--blue); padding-left:10px; }
+  h2 .no { color:var(--blue); margin-right:4px; }
+  .why { color:var(--muted); font-size:13.5px; margin:0 0 14px 14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:12px 0; }
+  .tag { display:inline-block; font-size:12.5px; padding:1px 10px; border-radius:14px; margin-right:8px; vertical-align:2px; }
+  .t-green { background:var(--green-bg); color:var(--green); }
+  .t-red { background:var(--red-bg); color:var(--red); }
+  .t-blue { background:var(--blue-bg); color:var(--blue); }
+  .t-amber { background:var(--amber-bg); color:var(--amber); }
+
+  /* 结构 */
+  .tree { display:flex; flex-direction:column; gap:0; }
+  .node { background:var(--card); border:1.5px solid var(--line); border-radius:8px;
+          padding:10px 16px; margin:0 auto; text-align:center; min-width:220px; }
+  .node b { display:block; }
+  .node small { color:var(--muted); }
+  .node.new { border-color:var(--green); background:var(--green-bg); }
+  .vline { width:2px; height:18px; background:var(--line); margin:0 auto; }
+  .gap { border:1.5px dashed var(--red); background:var(--red-bg); color:var(--red);
+         border-radius:8px; padding:8px 16px; font-size:13.5px; text-align:center; }
+
+  /* 泳道 */
+  .lane { display:flex; align-items:stretch; gap:10px; margin:10px 0; }
+  .lane .who { flex:0 0 92px; display:flex; align-items:center; justify-content:center;
+               border-radius:8px; font-weight:600; writing-mode:horizontal-tb; }
+  .who-teacher { background:var(--blue-bg); color:var(--blue); }
+  .who-student { background:var(--green-bg); color:var(--green); }
+  .steps { display:flex; flex:1; gap:8px; flex-wrap:wrap; }
+  .step { flex:1; min-width:150px; background:var(--card); border:1px solid var(--line);
+          border-radius:8px; padding:8px 12px; font-size:13.5px; position:relative; }
+  .step b { display:block; font-size:14px; }
+  .step .id { color:var(--muted); font-size:11.5px; }
+  .step .ex { color:var(--amber); font-size:12.5px; margin-top:4px; }
+  .arrow { color:var(--muted); align-self:center; font-size:16px; }
+
+  /* 原型线框 */
+  .wire { display:grid; grid-template-columns:1fr 1.2fr; gap:10px; background:#fff;
+          border:2px solid var(--ink); border-radius:10px; overflow:hidden; }
+  .wire .pane { padding:14px; min-height:230px; }
+  .wire .left { border-right:1px dashed var(--line); background:#fbfcfe; }
+  .wire .title { font-size:12.5px; color:var(--muted); text-transform:uppercase;
+                 letter-spacing:.06em; margin-bottom:10px; }
+  .wline { background:#eef2f7; border-radius:5px; height:14px; margin:9px 0; }
+  .wline.w60 { width:60%; } .wline.w80 { width:80%; } .wline.w40 { width:40%; }
+  .wbtns { margin-top:12px; display:flex; gap:8px; }
+  .wbtn { padding:5px 16px; border-radius:6px; font-size:13px; border:1.5px solid; }
+  .wbtn.run { border-color:var(--blue); color:var(--blue); }
+  .wbtn.submit { background:var(--green); border-color:var(--green); color:#fff; }
+  .wresult { margin-top:12px; background:#f0f4f0; border:1px solid var(--line);
+             border-radius:6px; padding:8px 10px; font-size:12.5px; color:var(--muted); min-height:52px; }
+
+  /* 决策 */
+  .dec { display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; }
+  .opt { flex:1; min-width:260px; background:var(--card); border:1.5px solid var(--line);
+         border-radius:10px; padding:14px 16px; }
+  .opt.rec { border-color:var(--green); }
+  .opt h4 { margin:0 0 6px; font-size:15.5px; }
+  .opt p { margin:6px 0; font-size:13.5px; color:var(--muted); }
+  .opt .impact { font-size:13px; background:var(--blue-bg); color:var(--blue);
+                 border-radius:6px; padding:6px 10px; margin-top:8px; }
+  .verdict { display:inline-block; font-size:12px; padding:1px 9px; border-radius:12px; }
+  .v-rec { background:var(--green); color:#fff; }
+  .decide-note { background:var(--card); border:1px dashed var(--amber); border-radius:10px;
+                 padding:12px 16px; margin-top:14px; font-size:13.5px; color:var(--amber); }
+  .help { background:var(--card); border:1px solid var(--line); border-radius:10px;
+          padding:14px 18px; margin:18px 0 0; font-size:13.5px; color:var(--muted); }
+  .help b { color:var(--ink); }
+  details { margin-top:8px; }
+  summary { cursor:pointer; color:var(--blue); font-size:13.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>编程实验模块 · 需求审核</h1>
+  <div class="meta">
+    <span class="badge b-review">待你审核</span>&ensp;
+    版本 v0 · 2026-11-06 · 事实源:<code>requirement-review.json</code> ·
+    你确认后,后续架构方案与代码都以此文档为准绳逐条对照
+  </div>
+</header>
+
+<div class="help">
+  <b>这份页面怎么审</b>(预计 5 分钟):从上往下共 5 节。
+  <b>第 1~4 节</b>是"我对现状和需求的理解",你看有没有理解错——有错就告诉我,不用讲技术;
+  <b>第 5 节</b>是我替你做好的技术决定(附原因,可否决,不用你操心细节);
+  <b>第 6 节</b>是只有你能拍板的 3 个业务问题。看完直接在对话里回复,例如"第 2 节流程第二步不对,应该是……"或"Q1 选 Python,Q2、Q3 同意推荐"。
+</div>
+
+<!-- ① 现状理解 -->
+<h2><span class="no">①</span>我对现有系统的理解</h2>
+<p class="why">为什么先看这节:接下来的改动都发生在这个系统里,如果我理解错了现状,方案必然是错的。有理解错的地方请直接指出。</p>
+
+<div class="card">
+  <p style="margin:4px 0 12px">平台目前的结构(简化):课程分两层——<b>课程 → 章节</b>。学生凭邀请码选课,学视频、手动"标记已学"。教师发布课程内容有一套现成的"发布"流程。</p>
+  <div class="tree">
+    <div class="node"><b>课程 Course</b><small>含邀请码、归属教师</small></div>
+    <div class="vline"></div>
+    <div class="node"><b>章节 Chapter</b><small>目前只有视频类学习内容;学生学完手动"标记已学"</small></div>
+    <div class="vline"></div>
+    <div class="node new"><b>🆕 编程实验 Lab</b><small>本次新增:挂在章节下,与视频内容并列,复用同一套发布流程</small></div>
+  </div>
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px">
+    <div class="gap" style="flex:1">⚠ 现状缺口:平台<b>没有任何判题能力</b>(没有跑学生代码的服务),需要从零新建</div>
+    <div class="gap" style="flex:1">⚠ 现状缺口:平台<b>没有任何作业/评分数据</b>,实验模块是第一个评分功能</div>
+  </div>
+</div>
+
+<!-- ② 需求理解 -->
+<h2><span class="no">②</span>我对需求的理解(一句话版)</h2>
+<p class="why">为什么单独一节:如果这句话理解错了,后面全错。请先确认这句。</p>
+<div class="card" style="border-left:4px solid var(--green)">
+  <b>老师</b>在课程章节里布置动手编程实验:<b>学生</b>看到左边任务说明、右边代码编辑器,
+  写完代码点运行,系统<b>自动判对错并给分</b>;老师能看到每个学生做题的<b>全过程</b>(改了几次、卡在哪)。
+</div>
+<div class="card">
+  <span class="tag t-green">本次做</span>实验挂章节下、实验页面(左说明右编辑器)、判题与自动评分、过程时间线给老师看<br>
+  <span class="tag t-amber">本次不做</span>多语言(仅 Python)、防作弊、过程分自动折算总分、多文件大项目
+</div>
+
+<!-- ③ 布局示意 -->
+<h2><span class="no">③</span>实验页面长什么样(示意,非最终视觉)</h2>
+<p class="why">为什么给示意:你说"参考 LeetCode 布局",这张图确认我们理解的是同一种东西。灰色条代表文字内容。</p>
+<div class="wire">
+  <div class="pane left">
+    <div class="title">左栏 · 任务说明</div>
+    <b style="font-size:15px">实验:两数之和</b>
+    <div style="font-size:13px;color:var(--muted);margin-top:2px">截止:11月20日 · 最高分:—</div>
+    <div class="wline w80"></div><div class="wline"></div><div class="wline w60"></div>
+    <div style="font-size:13px;margin-top:10px"><b>示例</b><div class="wline w60" style="margin-top:6px"></div><div class="wline w40"></div></div>
+    <div style="margin-top:14px;font-size:13px;color:var(--blue)">💬 问 AI 助教(复用现有对话)</div>
+  </div>
+  <div class="pane">
+    <div class="title">右栏 · 代码编辑器</div>
+    <div style="background:#f4f6f8;border:1px solid var(--line);border-radius:6px;padding:10px;font-family:Consolas,monospace;font-size:12.5px">
+      <span style="color:var(--muted)"># 代码框架已预填</span><br>
+      <span style="color:var(--blue)">def</span> two_sum(nums, target):<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--muted)"># 在这里写你的答案</span>
+    </div>
+    <div class="wbtns"><span class="wbtn run">▶ 运行</span><span class="wbtn submit">提交评分</span></div>
+    <div class="wresult">结果区:点"运行"看示例输出(不计分);点"提交评分"显示 3/4 用例通过,得分 75,哪个用例没过、为什么</div>
+  </div>
+</div>
+
+<!-- ④ 业务流程 -->
+<h2><span class="no">④</span>业务流程(谁在什么时候做什么)</h2>
+<p class="why">为什么用泳道:左右位置代表"谁在做",从左到右是时间顺序。橙色小字是出错时的处理。</p>
+
+<div class="card">
+  <b style="font-size:14px">流程一:老师布置实验</b>
+  <div class="lane">
+    <div class="who who-teacher">老师</div>
+    <div class="steps">
+      <div class="step"><span class="id">s1</span><b>新建实验</b>写说明、备测试用例、设截止时间(可选)<div class="ex">没设截止时间→不提醒</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><span class="id">s2</span><b>发布</b>复用现有课程发布流程,发布后学生可见</div>
+    </div>
+  </div>
+  <b style="font-size:14px">流程二:学生做实验</b>
+  <div class="lane">
+    <div class="who who-student">学生</div>
+    <div class="steps">
+      <div class="step"><span class="id">s3</span><b>打开实验</b>左说明右编辑器,代码框架已预填</div>
+      <div class="arrow">→</div>
+      <div class="step"><span class="id">s4</span><b>运行调试</b>跑示例用例,即时看输出,不计分<div class="ex">死循环→强制中断并提示</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><span class="id">s5</span><b>提交评分</b>跑隐藏用例,按通过率得分<div class="ex">可反复提交,取最高分</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><span class="id">s6</span><b>可问 AI 助教</b>提问记录进入过程时间线</div>
+    </div>
+  </div>
+  <b style="font-size:14px">流程三:老师查看</b>
+  <div class="lane">
+    <div class="who who-teacher">老师</div>
+    <div class="steps">
+      <div class="step"><span class="id">s7</span><b>课程页学生列表</b>每人一行:最高分 | 提交次数 | 最近活动;点名字看过程时间线(何时开始、改了几次、问过什么)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ⑤ 技术决策 -->
+<h2><span class="no">⑤</span>技术决定(我已定,附原因;你有否决权,不必研究细节)</h2>
+<p class="why">为什么这节不提问:这些是纯技术选型,判断它们需要工程经验,不该变成你的负担。但决定权最终在你——看不懂就跳过,觉得不对就说"第 5 节第 X 条重新考虑"。</p>
+
+<div class="card">
+  <table style="width:100%;border-collapse:collapse;font-size:13.5px">
+    <tr style="color:var(--muted);text-align:left"><th style="padding:6px 8px">决定</th><th style="padding:6px 8px">这是指什么</th><th style="padding:6px 8px">为什么这样定</th></tr>
+    <tr style="border-top:1px solid var(--line)"><td style="padding:8px">学生代码在"判题沙箱"里运行</td><td style="padding:8px;color:var(--muted)">一个隔离的保险箱环境:代码跑崩了也伤不到系统</td><td style="padding:8px;color:var(--muted)">学生代码不可信,必须隔离;自建轻量沙箱约百行代码,第三方服务会把学生代码送出内网</td></tr>
+    <tr style="border-top:1px solid var(--line)"><td style="padding:8px">编辑器用现成组件 CodeMirror</td><td style="padding:8px;color:var(--muted)">相当于"代码用的输入框",好比写作用 Word 而不是自造文字处理器</td><td style="padding:8px;color:var(--muted)">轻、快,教学代码量足够用;更重的方案体验提升有限、加载变慢</td></tr>
+    <tr style="border-top:1px solid var(--line)"><td style="padding:8px">评分数据新建规范表存储</td><td style="padding:8px;color:var(--muted)">谁的实验、得了多少分、提交了几次,都有据可查</td><td style="padding:8px;color:var(--muted)">评分数据结构复杂,不适合塞进现有的宽松格式;规范存储才能支撑以后出成绩单</td></tr>
+    <tr style="border-top:1px solid var(--line)"><td style="padding:8px">学生在平台网页做实验,老师查看并入现有课程页</td><td style="padding:8px;color:var(--muted)">不新增独立入口,学生沿现有学习路径就能到达</td><td style="padding:8px;color:var(--muted)">重交互页面适合网页端;老师已在课程页看学习数据,不再加一个页面</td></tr>
+  </table>
+</div>
+
+<!-- ⑥ 待决策 -->
+<h2><span class="no">⑥</span>需要你拍板的 3 个问题</h2>
+<p class="why">为什么只有 3 个:其余所有问题要么我能自己查证(已查),要么属于技术细节(第⑤节)。每题绿色为我的推荐,方框说明"这个选择对你的影响"。</p>
+
+<div class="card">
+  <b>Q1 · v1 先支持哪门语言?</b>
+  <div class="dec">
+    <div class="opt rec"><h4>仅 Python <span class="verdict v-rec">推荐</span></h4>
+      <p>判题环境每多一门语言,搭建维护成本约翻一倍。平台课程以 AI/数据方向为主,Python 已覆盖绝大多数实验。</p>
+      <div class="impact">对你的影响:最快用上实验模块;以后加语言不动架构。</div></div>
+    <div class="opt"><h4>Python + JavaScript</h4>
+      <p>多覆盖前端类实验,但判题环境、防滥用工作量接近翻倍,上线更慢。</p>
+      <div class="impact">对你的影响:第一版明显更晚上线。</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <b>Q2 · "过程性评价"怎么呈现?</b>
+  <div class="dec">
+    <div class="opt rec"><h4>先展示过程,不打过程分 <span class="verdict v-rec">推荐</span></h4>
+      <p>老师看到真实时间线(何时开始、改了几次、问到什么),人工综合判断。等有了一学期真实数据,再决定要不要公式化打分。</p>
+      <div class="impact">对你的影响:老师多花两三分钟看时间线,但判断有依据、不被失真公式误导。</div></div>
+    <div class="opt"><h4>过程自动打分,并入总分</h4>
+      <p>省老师的事,但"什么行为值几分"目前没有任何依据,容易失真,还可能被学生钻空子刷信号。</p>
+      <div class="impact">对你的影响:省事,但分数可能不可信。</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <b>Q3 · v1 要不要防作弊(禁粘贴、切屏检测)?</b>
+  <div class="dec">
+    <div class="opt rec"><h4>v1 不做 <span class="verdict v-rec">推荐</span></h4>
+      <p>防作弊是场军备竞赛,第一版做了必然形同虚设。过程时间线本身就客观暴露异常:一个学生 0 次运行、直接满分提交,老师一眼可见。</p>
+      <div class="impact">对你的影响:学生可粘贴自己的常用代码(体验好);成绩用于平时参考足够。</div></div>
+    <div class="opt"><h4>v1 就做基础限制</h4>
+      <p>成绩更可信,但开发量增加、体验变差。</p>
+      <div class="impact">对你的影响:适合实验成绩直接计入总评、高利害的场景。</div></div>
+  </div>
+</div>
+
+<div class="decide-note">✍️ 怎么回复:直接在对话里说,例如"<b>第①节里'标记已学'现在不是手动的,已经改成自动了</b>"或"<b>Q1 选 Python,Q2、Q3 同意推荐</b>"。你的每条意见我都会记录到需求文档的对应位置,改完给你看变更清单,再确认一版。</div>
+
+</div>
+</body>
+</html>

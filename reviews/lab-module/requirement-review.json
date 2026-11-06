@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "type": "requirement-review",
+  "title": "编程实验模块(参考 LeetCode 交互布局)",
+  "status": "under-review",
+  "restatement": {
+    "one_liner": "老师在课程章节里布置动手编程实验:学生看到左边任务说明、右边代码编辑器,写完代码点运行,系统自动判对错并给分;老师能看到每个学生做题的全过程。",
+    "in_scope": [
+      "实验作为章节下的新内容类型,复用现有课程发布流程",
+      "实验页面:左侧任务说明 + 右侧代码编辑器(学生写代码的地方)",
+      "后端新增'判题'能力:接收学生代码,在隔离环境里运行并按测试用例打分",
+      "过程记录:学生的运行次数、提交历史、AI 助教提问,以时间线形式给老师看",
+      "正确性自动评分:按隐藏测试用例的通过率给分"
+    ],
+    "out_of_scope": [
+      "多语言支持(v1 仅 Python)",
+      "反作弊(禁粘贴、切屏检测)",
+      "过程分自动合成总分(过程仅展示,老师人工综合)",
+      "多文件工程项目式实验(v1 单文件)"
+    ],
+    "source_ref": "用户 2026-11-06 原话:'上线编程类实验模块,参考LeetCode交互布局,左侧展示实验任务说明,右侧内置代码编辑器,对接后端编译运行服务,支持过程性评价+代码正确性自动评分'"
+  },
+  "actors": [
+    {
+      "id": "teacher",
+      "name": "教师",
+      "goal": "布置动手实验,不用人工逐个看代码就知道学生掌握程度",
+      "pain_points": ["现平台只能看视频学,无法布置和衡量动手练习"],
+      "journey": ["在章节里新建实验(写说明+准备测试用例)", "随课程发布", "查看学生实验情况(分数+过程时间线)"],
+      "source_ref": "代码事实:platform/backend/app/models.py Course→Chapter 结构;教师课程页已有 learning-data 聚合(platform/backend/app/api/routes/courses.py)"
+    },
+    {
+      "id": "student",
+      "name": "学生",
+      "goal": "在学完视频后动手练,即时知道自己的代码对不对",
+      "pain_points": ["学完只能'标记已学',没有动手环节"],
+      "journey": ["进入章节实验", "读左侧说明、右侧写代码", "运行调试", "提交得到评分", "未过则继续修改"],
+      "source_ref": "代码事实:ChapterProgress 仅手动标记完成(platform/backend/app/models.py L251)"
+    }
+  ],
+  "flows": [
+    {
+      "id": "create-lab",
+      "name": "老师创建并发布实验",
+      "steps": [
+        { "id": "s1", "actor": "teacher", "action": "在章节下新建实验:填任务说明、参考答案、测试用例、截止时间(可选)", "input": "实验内容", "output": "实验草稿", "source_ref": "需求原文'左侧展示实验任务说明'" },
+        { "id": "s2", "actor": "teacher", "action": "随课程发布实验(复用现有发布流程,发布后联动通知学生端)", "output": "学生可见的实验", "source_ref": "代码事实:发布联动模板 internal/*/published-*-knowledge(platform/backend/app/api/routes/teacher_bridge.py)" }
+      ]
+    },
+    {
+      "id": "do-lab",
+      "name": "学生做实验",
+      "steps": [
+        { "id": "s3", "actor": "student", "action": "打开实验页:左侧任务说明,右侧代码编辑器(已预填代码框架)", "output": "编辑中的代码", "source_ref": "需求原文'参考LeetCode交互布局'" },
+        { "id": "s4", "actor": "student", "action": "点'运行':代码送后端沙箱,跑示例用例,即时看到输出(不记分)", "output": "运行结果", "exceptions": ["超时(如死循环)会被强制中断并提示", "运行出错显示错误信息"], "source_ref": "需求原文'对接后端编译运行服务'" },
+        { "id": "s5", "actor": "student", "action": "点'提交':代码在沙箱里跑隐藏测试用例,按通过率得分", "output": "得分+未通过的用例提示", "exceptions": ["提交次数不限,取最高分"], "source_ref": "用户已确认方向:测试用例通过率判分" },
+        { "id": "s6", "actor": "student", "action": "可向 AI 助教提问(复用现有学生端对话)", "output": "提问记录(计入过程时间线)", "source_ref": "用户需求'过程性评价'候选信号之⑤" }
+      ]
+    },
+    {
+      "id": "review-lab",
+      "name": "老师查看实验情况",
+      "steps": [
+        { "id": "s7", "actor": "teacher", "action": "在课程页学生列表里看每人的:正确分(用例通过率)+ 过程时间线(运行/提交/提问)", "output": "教学判断依据", "source_ref": "代码事实:教师课程页已有 per-student learning-data 聚合(courses.py L110-117)" }
+      ]
+    }
+  ],
+  "prototype": {
+    "screens": [
+      {
+        "id": "lab-page",
+        "name": "实验页(学生视角)",
+        "elements": [
+          { "kind": "heading", "label": "实验:两数之和", "note": "顶栏:实验名+截止时间+当前得分" },
+          { "kind": "card", "label": "左栏:任务说明", "note": "题目描述、输入输出示例、提示;占页面左半" },
+          { "kind": "card", "label": "右栏:代码编辑器", "note": "预填函数框架 def two_sum(...);上方按钮:[运行][提交];下方结果区显示运行输出/判分结果;占页面右半" },
+          { "kind": "button", "label": "运行", "note": "跑示例用例,不记分" },
+          { "kind": "button", "label": "提交", "note": "跑隐藏用例,记分" },
+          { "kind": "link", "label": "问 AI 助教", "note": "跳转现有学生端对话" }
+        ]
+      },
+      {
+        "id": "teacher-lab-view",
+        "name": "实验情况(教师视角)",
+        "elements": [
+          { "kind": "heading", "label": "实验:两数之和 · 学生情况" },
+          { "kind": "list", "label": "学生列表:姓名 | 最高分 | 提交次数 | 最近活动", "note": "点学生名展开过程时间线" },
+          { "kind": "card", "label": "过程时间线", "note": "何时首次运行、提交了几次、每次得分变化、问过 AI 什么" }
+        ]
+      }
+    ]
+  },
+  "expected_effect": {
+    "current": "学生学完视频只能手动'标记已学';老师无法布置动手练习,也无法客观了解学生会不会写代码。",
+    "after": "章节里可以发布编程实验;学生在线写代码、自动判分;老师按分数和过程时间线了解每个学生的真实掌握程度。",
+    "source_ref": "需求原文 + 代码事实(现平台无任何作业/评分模型,已核实)"
+  },
+  "open_questions": [
+    {
+      "id": "q1",
+      "question": "v1 先支持哪门语言?",
+      "context": "判题环境每多一门语言,搭建和维护成本约翻一倍(见界面'技术决策预告'第 1 条)。平台课程以 AI/数据方向为主。",
+      "options": [
+        { "label": "仅 Python", "recommended": true, "reason": "覆盖你的课程场景,把精力花在把体验做对;界面留扩展点,加语言不改架构" },
+        { "label": "Python + JavaScript", "reason": "多覆盖前端类实验,但判题环境、防滥用工作量接近翻倍" }
+      ],
+      "answer": null
+    },
+    {
+      "id": "q2",
+      "question": "过程性评价怎么呈现?",
+      "context": "你提了'过程性评价',它可以是'展示过程'也可以是'自动打过程分'。区别影响老师怎么用、也影响学生对'被监控'的感受。",
+      "options": [
+        { "label": "先展示过程,不打分", "recommended": true, "reason": "老师看到真实的时间线(何时开始、改了几次、问到什么),人工综合判断;等一学期真实数据后再决定要不要公式化打分,避免拍脑袋" },
+        { "label": "过程自动打分并入总分", "reason": "省老师的事,但信号→分数的公式没有任何依据,容易失真且学生可能刷信号" }
+      ],
+      "answer": null
+    },
+    {
+      "id": "q3",
+      "question": "v1 要不要防作弊(禁粘贴、切屏检测)?",
+      "context": "实验成绩是否用于高利害场景(如计入总评)决定防作弊的必要性。",
+      "options": [
+        { "label": "v1 不做", "recommended": true, "reason": "防作弊是军备竞赛,v1 做了必然形同虚设;过程时间线本身就客观记录了异常(如 0 次运行直接满分提交),老师一眼能看出来" },
+        { "label": "v1 就做基础限制", "reason": "成绩更可信,但开发量增加,且体验变差(不能粘贴自己的常用代码)" }
+      ],
+      "answer": null
+    }
+  ],
+  "feedback": [],
+  "glossary": [
+    { "term": "判题沙箱", "plain": "一个隔离的'保险箱'环境,学生代码在里面运行,跑崩了、写坏了也伤不到系统本身" },
+    { "term": "测试用例", "plain": "预先准备好的几组'输入→标准答案',把学生代码逐个跑一遍,对了几组就得几分" },
+    { "term": "隐藏用例", "plain": "不给学生看的测试用例,防止学生只针对已知例子写死答案" },
+    { "term": "过程性评价", "plain": "不只看最终对错,还看学生是怎么做出来的(改了几次、卡在哪)" },
+    { "term": "CodeMirror / Monaco", "plain": "现成的'代码输入框'组件,就像 Word 之于写作——不用自己从零造编辑器" }
+  ]
+}
