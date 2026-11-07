@@ -130,10 +130,10 @@ function render() {
     frag.append(b);
   }
 
-  /* 反馈状态提示 */
+  /* 反馈状态提示(含已确认状态下的新意见) */
   const pend = s.feedback.filter(f => f.status === 'pending').length;
-  if (pend > 0 && s.status !== 'confirmed') {
-    frag.append(el('div', 'banner', '⏳ 你有 ' + pend + ' 条意见已提交,等待 AI 读取并修订。提交后无需重复发送,AI 修订完成后这里会展示变化。'));
+  if (pend > 0) {
+    frag.append(el('div', 'banner', '⏳ 你有 ' + pend + ' 条意见已提交,等待 AI 读取并回应。AI 回应后会发布新版本,页面会自动展示变化' + (s.status === 'confirmed' ? ';你之前确认的版本若被修改,确认会自动失效。' : '。')));
   }
 
   /* 内容(按类型渲染) */
