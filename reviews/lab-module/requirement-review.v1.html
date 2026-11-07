@@ -73,6 +73,9 @@
   .optline .rec { color:var(--green); font-weight:600; }
   textarea { width:100%; min-height:56px; margin-top:8px; border:1px solid var(--line);
              border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13.5px; resize:vertical; }
+  .fb-card { border:1px dashed var(--amber); background:var(--card); }
+  .fb-card .fb-title { font-size:13.5px; color:var(--amber); }
+  .fb-card .fb-done { font-size:13px; color:var(--green); margin-top:6px; }
   .hidden { display:none; }
   .issue-open { border-color:var(--amber); }
 
@@ -119,6 +122,11 @@
       <div class="gap" style="flex:1">⚠ 缺口:平台没有任何<b>作业/评分</b>数据,这是第一个评分功能</div>
     </div>
   </div>
+<div class="card fb-card">
+  <div class="fb-title">✍️ 对这一步的任何修改或建议(提交后我消化调整、回应你,然后才进入下一步)</div>
+  <textarea class="step-note" placeholder="例如:'学生不是手动标记已学,是看完视频自动完成'"></textarea>
+  <div style="margin-top:8px;text-align:right"><button class="btn mini step-submit">提交本步意见</button><span class="fb-done hidden"></span></div>
+</div>
 </section>
 
 <!-- ═══ 第 2 步:需求理解 ═══ -->
@@ -133,6 +141,11 @@
     <span class="tag t-green">本次做</span>实验挂章节下 · 左说明右编辑器页面 · 自动判分 · 过程时间线给老师<br>
     <span class="tag t-amber">本次不做</span>多语言(仅 Python)· 防作弊 · 过程分折算总分 · 多文件大项目
   </div>
+<div class="card fb-card">
+  <div class="fb-title">✍️ 对这一步的任何修改或建议</div>
+  <textarea class="step-note" placeholder="例如:'不做清单里加上 XX'"></textarea>
+  <div style="margin-top:8px;text-align:right"><button class="btn mini step-submit">提交本步意见</button><span class="fb-done hidden"></span></div>
+</div>
 </section>
 
 <!-- ═══ 第 3 步:页面布局 ═══ -->
@@ -160,6 +173,11 @@
       </div>
     </div>
   </div>
+<div class="card fb-card">
+  <div class="fb-title">✍️ 对这一步的任何修改或建议</div>
+  <textarea class="step-note" placeholder="例如:'左栏要再显示我的历史提交'"></textarea>
+  <div style="margin-top:8px;text-align:right"><button class="btn mini step-submit">提交本步意见</button><span class="fb-done hidden"></span></div>
+</div>
 </section>
 
 <!-- ═══ 第 4 步:流程 ═══ -->
@@ -184,6 +202,11 @@
       <div class="step2"><b>⑦ 课程页学生列表</b>每人:最高分|提交次数;点名字看时间线(何时开始、改几次、问过什么)</div>
     </div></div>
   </div>
+<div class="card fb-card">
+  <div class="fb-title">✍️ 对这一步的任何修改或建议</div>
+  <textarea class="step-note" placeholder="例如:'老师还想要导出成 Excel'"></textarea>
+  <div style="margin-top:8px;text-align:right"><button class="btn mini step-submit">提交本步意见</button><span class="fb-done hidden"></span></div>
+</div>
 </section>
 
 <!-- ═══ 第 5 步:技术决定 ═══ -->
@@ -218,6 +241,11 @@
     <div class="optline"><label><input type="radio" name="d4" value="ok" checked> 同意</label><label><input type="radio" name="d4" value="reject"> 重新考虑</label></div>
     <textarea class="hidden" placeholder="哪里不对?一句话即可"></textarea>
   </div>
+<div class="card fb-card">
+  <div class="fb-title">✍️ 对这一步的任何修改或建议</div>
+  <textarea class="step-note" placeholder="例如:'第 4 条不对,学生应该在 XX 入口'"></textarea>
+  <div style="margin-top:8px;text-align:right"><button class="btn mini step-submit">提交本步意见</button><span class="fb-done hidden"></span></div>
+</div>
 </section>
 
 <!-- ═══ 第 6 步:三个问题 ═══ -->
@@ -254,6 +282,11 @@
     <div class="why2" style="margin-top:8px">影响:不做→学生体验好,过程时间线本身会暴露异常(如 0 次运行直接满分);做→成绩更可信但开发更慢、体验变差。若实验成绩要计入总评,建议选"做"。</div>
     <textarea class="hidden" placeholder="想补充什么?"></textarea>
   </div>
+<div class="card fb-card">
+  <div class="fb-title">✍️ 其他任何想法</div>
+  <textarea class="step-note" placeholder="例如:'我担心学生用 AI 直接抄答案'"></textarea>
+  <div style="margin-top:8px;text-align:right"><button class="btn mini step-submit">提交本步意见</button><span class="fb-done hidden"></span></div>
+</div>
 </section>
 
 <!-- ═══ 第 7 步:汇总 ═══ -->
@@ -315,9 +348,40 @@
   document.querySelectorAll('.dec-row textarea').forEach(function(ta){
     ta.addEventListener('input',function(){ collect(); save(); });
   });
+  document.querySelectorAll('.step-note').forEach(function(ta){
+    ta.addEventListener('input',function(){ collect(); save(); });
+  });
+
+  /* 每步提交:意见落盘为 feedback 文件,不改事实源(治理约定) */
+  document.querySelectorAll('.step-submit').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var pane=btn.closest('section.pane'), idx=panes.indexOf(pane);
+      var note=pane.querySelector('.step-note').value.trim();
+      collect(); save();
+      var body=JSON.stringify({doc:'lab-module', version:'v1', type:'step-feedback',
+        step:idx+1, stepName:pane.dataset.name, note:note, review:state}, null, 2);
+      var doneEl=btn.parentElement.querySelector('.fb-done');
+      function markDone(msg){ doneEl.textContent=msg; doneEl.classList.remove('hidden'); btn.disabled=true; }
+      function fallbackExport(){
+        var blob=new Blob([body],{type:'application/json'});
+        var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+        a.download='lab-review-step'+(idx+1)+'.json'; a.click();
+        markDone('✅ 意见文件已导出,发给我即可');
+      }
+      if(serverMode){
+        fetch('submit',{method:'POST',headers:{'Content-Type':'application/json'},body:body})
+          .then(function(r){return r.json()})
+          .then(function(res){
+            if(res.ok) markDone('✅ 已保存到 '+res.saved+',等我回应后进入下一步');
+            else fallbackExport();
+          })
+          .catch(fallbackExport);
+      } else fallbackExport();
+    });
+  });
 
   function collect(){
-    state.answers={}; state.decisions={}; state.comments=[];
+    state.answers={}; state.decisions={}; state.comments={}; state.stepNotes={};
     document.querySelectorAll('.dec-row').forEach(function(row){
       var sel=row.querySelector('input[type=radio]:checked');
       var ta=row.querySelector('textarea'), note=ta?ta.value.trim():'';
@@ -327,19 +391,20 @@
       }else{
         state.decisions[row.dataset.d]={verdict: sel?sel.value:'ok', note:note};
       }
-      if(isQ && !sel && note) state.comments.push({target:row.dataset.q, text:note});
+    });
+    panes.forEach(function(p,i){
+      var ta=p.querySelector('.step-note');
+      if(ta && ta.value.trim()) state.stepNotes[i]={step:p.dataset.name, note:ta.value.trim()};
+      var row=p.querySelector('.dec-row[data-q]'), ta2=row?row.querySelector('textarea'):null;
+      if(row){
+        var sel=row.querySelector('input[type=radio]:checked');
+        if(!sel && ta2 && ta2.value.trim()) state.comments[row.dataset.q]=ta2.value.trim();
+      }
     });
     state.updatedAt=new Date().toISOString();
     return state;
   }
 
-  function nameMap(v){
-    return {
-      q1:{python:'仅 Python','python-js':'Python + JavaScript'},
-      q2:{show:'先展示过程不打分',score:'过程自动打分'},
-      q3:{no:'不做防作弊',basic:'做基础限制'}
-    }[v.split('|')[0]] ? null : null;
-  }
   var LABELS={
     q1:{python:'仅 Python','python-js':'Python + JavaScript'},
     q2:{show:'先展示过程不打分',score:'过程自动打分并入总分'},
@@ -351,6 +416,9 @@
     collect();
     var lines=[];
     var issues=0;
+    Object.keys(state.stepNotes||{}).forEach(function(i){
+      lines.push('第'+(+i+1)+'步('+state.stepNotes[i].step+')你的意见: '+state.stepNotes[i].note);
+    });
     Object.keys(state.decisions||{}).forEach(function(k){
       var d=state.decisions[k];
       if(d.verdict==='reject') issues++;
