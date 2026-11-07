@@ -66,6 +66,7 @@
 
 <script>
 'use strict';
+const BUILD = 'build-2026-11-07d';  // 页面构建标识:排查"浏览器加载的是否为新页面"用
 /* 安全渲染:一切来自服务端/AI/用户的内容一律 textContent,禁止 innerHTML 拼接。 */
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -124,7 +125,8 @@ function render() {
   const meta = el('div', 'meta');
   meta.append(el('span', 'pill ' + (s.status === 'confirmed' ? 'p-ok' : 'p-wait'),
                  s.status === 'confirmed' ? '✅ 你已确认 r' + s.current_revision : '⏳ 待你审核'),
-              el('span', '', '  版本 r' + s.current_revision + ' · 任务 ' + s.review_id));
+              el('span', '', '  版本 r' + s.current_revision + ' · 任务 ' + s.review_id
+                          + ' · 页面构建 ' + BUILD));
   head.append(h1, meta);
   frag.append(head);
 
