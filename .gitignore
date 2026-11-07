@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+reviews/.agent-token
+reviews/rev-*/
