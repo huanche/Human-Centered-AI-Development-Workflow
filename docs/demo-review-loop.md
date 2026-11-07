@@ -3,6 +3,9 @@
 环境:Windows 11 · Python 3.10.11 · mcp 2.x · 服务 `server/review_service.py`(127.0.0.1:8765)
 演示通过 MCP server 同一代码路径(`server/mcp_server.py::_call`)执行 Agent 侧操作,浏览器侧用 HTTP 直调(与页面 JS 完全相同的端点)。
 
+> 说明:演示任务原为 rev-0849d7e1,因一次误删 reviews 目录(已从 git 恢复试点文件)而丢失;当前可打开的演示任务为 **rev-5e10e6a4**(含完整 r1→r2 历史与人工确认记录):
+> `http://127.0.0.1:8765/rt/rev-5e10e6a4?t=f25f94d10e35d7307a9bfe896f1f37c7`
+
 ## 实测输出
 
 ```
