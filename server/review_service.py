@@ -99,8 +99,14 @@ class Handler(SimpleHTTPRequestHandler):
             if self.path == "/ping":
                 return self._json(200, {"ok": True, "service": "hc-aidw-review"})
             if len(parts) == 2 and parts[0] == "rt":
-                self.path = "/server/review-page.html"  # 令牌由页面 JS 调 API 时校验
-                return super().do_GET()
+                body = (ROOT / "server" / "review-page.html").read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")  # 防浏览器缓存旧页面
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if len(parts) == 3 and parts[:2] == ["api", "review"]:      # 浏览器
                 rid, tok = parts[2], (q.get("t", [""])[0] or
                                       self.headers.get("X-Review-Token", ""))
