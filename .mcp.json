@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "hc-aidw-review": {
+      "command": "python",
+      "args": ["-X", "utf8", "E:\\LLM\\HC-AIDW\\server\\mcp_server.py"],
+      "env": {
+        "HC_AIDW_SERVICE": "http://127.0.0.1:8765"
+      }
+    }
+  }
+}

@@ -11,11 +11,20 @@
 
 ## 目录
 
+- `server/` — 审核闭环服务:`review_service.py`(唯一状态持有者,127.0.0.1 单机)、`store.py`(状态存储/版本/令牌)、`mcp_server.py`(MCP 薄客户端:4 工具)、`review-page.html`(通用审核页)
 - `schemas/` — 三份审核 JSON Schema(`requirement-review` / `architecture-review` / `verification-report`),`examples/` 为示例实例
 - `scripts/` — `validate.py`(schema 校验 + id 唯一性检查)、`diff_review.py`(两版变更回执)
+- `skills/hc-review/` — 审核闭环流程 skill(Agent 侧行为规则)
+- `tests/` — 场景测试 A–E(`python -m pytest tests/test_scenarios.py -v`)
 - `docs/` — 启动调研四份报告与 `research/` 调研笔记
-- `reviews/` — (实施阶段)每个试点需求的审核文档与渲染 HTML
-- `skills/` — (M4)hc-aidw 主控 skill
+- `reviews/` — 审核任务持久化(`<review_id>/state.json`)+ `.agent-token`(服务自动生成)
+
+## 审核闭环快速启动
+
+1. `python server/review_service.py` — 启动本地服务(127.0.0.1:8765,唯一状态持有者)
+2. MCP 配置已在本仓库 `.mcp.json`(Claude Code 打开本目录自动加载,重启会话生效),提供 4 个工具:request_review / get_review_status / wait_review_result / publish_revision
+3. Agent 按需读取 `skills/hc-review/SKILL.md` 执行流程规则
+4. 浏览器链接由 request_review 返回(`/rt/<id>?t=<令牌>`),确认只能在这里发生
 
 ## 工作约定
 
