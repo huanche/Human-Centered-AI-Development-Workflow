@@ -54,6 +54,9 @@
   .fbitem .st { font-size:12px; padding:1px 8px; border-radius:12px; margin-left:6px; }
   .st-pending { background:var(--amber-bg); color:var(--amber); }
   .st-addressed { background:var(--green-bg); color:var(--green); }
+  #live { position:fixed; right:16px; bottom:12px; font-size:12.5px; color:var(--muted);
+          background:var(--card); border:1px solid var(--line); border-radius:20px;
+          padding:4px 14px; box-shadow:0 1px 4px rgba(0,0,0,.06); z-index:9; }
 </style>
 </head>
 <body>
@@ -90,6 +93,15 @@ async function api(path, opts) {
   return j;
 }
 
+/* 右下角常驻状态条:当前版本 + 自动更新是否在工作 + 上次检查时间 */
+const live = document.createElement('div');
+live.id = 'live';
+document.body.appendChild(live);
+function setLive(rev, note) {
+  const t = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  live.textContent = '当前版本 r' + rev + ' · ' + (note || '自动更新中') + ' · 上次检查 ' + t;
+}
+
 async function load() {
   try {
     STATE = await api('?t=' + encodeURIComponent(TOKEN));
@@ -104,6 +116,7 @@ async function load() {
 function render() {
   const s = STATE;
   const frag = document.createDocumentFragment();
+  setLive(s.current_revision);
 
   /* 页眉 */
   const head = el('div');
@@ -345,7 +358,10 @@ async function poll() {
         + '&feedback=' + STATE.feedback.filter(f => f.status === 'pending').length
         + '&timeout=25&wait=1');
       if (sig.status === 'changed') await load();
-    } catch (e) { /* 服务不可用时静默重试 */ }
+      else setLive(STATE.current_revision);
+    } catch (e) {
+      if (STATE) setLive(STATE.current_revision, '⚠ 连接审核服务失败,将持续重试');
+    }
   }
 }
 
