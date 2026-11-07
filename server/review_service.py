@@ -129,7 +129,9 @@ class Handler(SimpleHTTPRequestHandler):
                         int(q.get("feedback", [self._pending(s)])[0]),
                         float(q.get("timeout", [25])[0]))
                     return self._json(200, {"ok": True, **sig})
-                return self._json(200, {"ok": True, **self.store.agent_view(parts[3])})
+                return self._json(200, {"ok": True,
+                                        **self.store.agent_view(parts[3],
+                                                                full="full" in q)})
             return super().do_GET()
         except ReviewError as e:
             return self._fail(e.code, e.message)

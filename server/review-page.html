@@ -185,35 +185,42 @@ function renderContent(s) {
       }
       if (cc.childNodes.length) box.append(cc);
     }
-    if ((c.actors || []).length) {
-      box.append(el('h2', '', '涉及的角色'));
-      const row = el('div', 'row');
-      c.actors.forEach(a => {
-        const d = el('div', 'actor');
-        d.append(el('b', '', a.name || a.id));
-        if (a.goal) d.append(el('div', 'meta', '目标:' + a.goal));
-        (a.journey || []).forEach(j => d.append(el('div', '', '→ ' + j)));
-        row.append(d);
-      });
-      box.append(row);
-    }
-    if ((c.flows || []).length) {
-      box.append(el('h2', '', '业务流程'));
-      c.flows.forEach(fl => {
-        const cc = card();
-        cc.append(el('b', '', fl.name || fl.id));
-        fl.steps.forEach(st => {
-          const lane = el('div', 'lane');
-          const who = st.actor === 'student' ? el('div', 'who ws', '学生')
-                    : el('div', 'who wt', st.actor === 'teacher' ? '老师' : (st.actor || '?'));
-          const stp = el('div', 'steps'); const d = el('div', 'step2');
-          d.append(el('b', '', st.action || ''));
-          if (st.exceptions && st.exceptions.length)
-            d.append(el('div', '', '⚠ ' + st.exceptions.join(';')));
-          stp.append(d); lane.append(who, stp); cc.append(lane);
+    if ((c.actors || []).length || (c.flows || []).length) {
+      const dd = el('details');
+      dd.append(el('summary', '', '展开:角色与业务流程(详情,默认收起)'));
+      const inner = el('div');
+      if ((c.actors || []).length) {
+        inner.append(el('h2', '', '涉及的角色'));
+        const row = el('div', 'row');
+        c.actors.forEach(a => {
+          const d = el('div', 'actor');
+          d.append(el('b', '', a.name || a.id));
+          if (a.goal) d.append(el('div', 'meta', '目标:' + a.goal));
+          (a.journey || []).forEach(j => d.append(el('div', '', '→ ' + j)));
+          row.append(d);
         });
-        box.append(cc);
-      });
+        inner.append(row);
+      }
+      if ((c.flows || []).length) {
+        inner.append(el('h2', '', '业务流程'));
+        c.flows.forEach(fl => {
+          const cc = card();
+          cc.append(el('b', '', fl.name || fl.id));
+          fl.steps.forEach(st => {
+            const lane = el('div', 'lane');
+            const who = st.actor === 'student' ? el('div', 'who ws', '学生')
+                      : el('div', 'who wt', st.actor === 'teacher' ? '老师' : (st.actor || '?'));
+            const stp = el('div', 'steps'); const d = el('div', 'step2');
+            d.append(el('b', '', st.action || ''));
+            if (st.exceptions && st.exceptions.length)
+              d.append(el('div', '', '⚠ ' + st.exceptions.join(';')));
+            stp.append(d); lane.append(who, stp); cc.append(lane);
+          });
+          inner.append(cc);
+        });
+      }
+      dd.append(inner);
+      box.append(dd);
     }
     if ((c.open_questions || []).length) {
       box.append(el('h2', '', '需要你拍板的问题'));
@@ -233,11 +240,8 @@ function renderContent(s) {
         });
         const other = el('label');
         const orb = el('input'); orb.type = 'radio'; orb.name = 'q-' + q.id; orb.value = '__other__';
-        other.append(orb, document.createTextNode(' 其他/都不对,在下面写'));
+        other.append(orb, document.createTextNode(' 其他/都不对(在下方意见框写)'));
         opts.append(other);
-        const ta = el('textarea'); ta.placeholder = '针对此问题的补充(可留空)';
-        ta.dataset.q = q.id;
-        opts.append(ta);
         d.append(opts);
         box.append(d);
       });

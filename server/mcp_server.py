@@ -87,15 +87,17 @@ def request_review(type: str, title: str, content: dict, context: dict = None) -
 
 
 @mcp.tool()
-def get_review_status(review_id: str) -> str:
-    """非阻塞查询审核任务状态。
+def get_review_status(review_id: str, include_full_content: bool = False) -> str:
+    """非阻塞查询审核任务状态(默认紧凑模式,省 token)。
 
-    返回:status(awaiting_review/confirmed)、current_revision、
-    revisions 历史、feedback(含 pending/addressed)、decisions(人工确认记录)、
-    needs_action(是否需要 Agent 修订)、context(恢复上下文)。
+    默认返回:status、current_revision、needs_action、pending_feedback
+    (待处理意见全文)、latest_change_summary、decisions、context(恢复上下文)。
+    只有当你要修订内容时才传 include_full_content=true 取回完整文档。
     不含浏览器访问令牌。
     """
-    return json.dumps(_call("GET", f"/api/agent/reviews/{review_id}"), ensure_ascii=False)
+    q = "?full=1" if include_full_content else ""
+    return json.dumps(_call("GET", f"/api/agent/reviews/{review_id}{q}"),
+                      ensure_ascii=False)
 
 
 @mcp.tool()

@@ -87,7 +87,7 @@ def test_scenario_a_full_loop(svc):
                     "step_name": "需求理解"})
     assert code == 200 and fb["feedback"]["status"] == "pending"
     # 5. Agent 查询到未处理反馈
-    code, st = req(base, "GET", f"/api/agent/reviews/{rid}", headers=AG)
+    code, st = req(base, "GET", f"/api/agent/reviews/{rid}?full=1", headers=AG)
     assert st["needs_action"] and st["feedback"][0]["status"] == "pending"
     # 6-7. Agent 修订并发布(base_revision 正确)
     new_content = {"restatement": {"one_liner": "做编程实验,学生自动完成学习标记"}}
@@ -97,7 +97,7 @@ def test_scenario_a_full_loop(svc):
                      "evidence": ["docs/prd.md#L12"]}, headers=AG)
     assert code == 200 and pub["revision"] == 2
     # 意见被标记为已在 r2 回应
-    code, st = req(base, "GET", f"/api/agent/reviews/{rid}", headers=AG)
+    code, st = req(base, "GET", f"/api/agent/reviews/{rid}?full=1", headers=AG)
     assert st["feedback"][0]["status"] == "addressed"
     assert st["feedback"][0]["addressed_in"] == 2
     # 8. 浏览器读到新版本+差异摘要
@@ -109,7 +109,7 @@ def test_scenario_a_full_loop(svc):
                   {"ack_revision": 2}, headers={"Origin": f"http://127.0.0.1:{Handler.port}",
                                                 "Host": f"127.0.0.1:{Handler.port}"})
     assert code == 200 and c["decision"]["revision"] == 2
-    code, st = req(base, "GET", f"/api/agent/reviews/{rid}", headers=AG)
+    code, st = req(base, "GET", f"/api/agent/reviews/{rid}?full=1", headers=AG)
     assert st["status"] == "confirmed" and st["decisions"][-1]["revision"] == 2
 
 
@@ -125,7 +125,7 @@ def test_scenario_b_revision_conflict(svc):
     code, e = req(base, "POST", f"/api/agent/reviews/{rid}/publish",
                   {"base_revision": 1, "content": {"v": 3}}, headers=AG)
     assert code == 409 and "版本冲突" in e["error"]
-    code, st = req(base, "GET", f"/api/agent/reviews/{rid}", headers=AG)
+    code, st = req(base, "GET", f"/api/agent/reviews/{rid}?full=1", headers=AG)
     assert st["current_revision"] == 2 and len(st["revisions"]) == 2
 
 
@@ -154,7 +154,7 @@ def test_scenario_d_recover_after_restart(svc):
     try:
         review_service.Handler.store = review_service.ReviewStore(root / "reviews")
         review_service.Handler.agent_token = "test-agent-token"
-        code, st = req(base, "GET", f"/api/agent/reviews/{rid}", headers=AG)
+        code, st = req(base, "GET", f"/api/agent/reviews/{rid}?full=1", headers=AG)
         assert code == 200
         assert st["context"]["project"] == "agentic-class-pilot"
         assert st["feedback"][0]["text"] == "改一下范围"
@@ -209,7 +209,7 @@ def test_confirmation_voided_by_later_revision(svc):
     code, pub = req(base, "POST", f"/api/agent/reviews/{rid}/publish",
                     {"base_revision": 1, "content": {"v": 2}}, headers=AG)
     assert code == 200
-    code, st = req(base, "GET", f"/api/agent/reviews/{rid}", headers=AG)
+    code, st = req(base, "GET", f"/api/agent/reviews/{rid}?full=1", headers=AG)
     assert st["status"] == "awaiting_review"  # 原确认失效
     assert any(h["action"] == "confirmation_voided" for h in st["history"])
     # 过期确认被拒

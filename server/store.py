@@ -104,12 +104,25 @@ class ReviewStore:
     def get_review(self, review_id: str) -> dict:
         return self._load(review_id)
 
-    def agent_view(self, review_id: str) -> dict:
-        """Agent 状态视图:不含 url_token(浏览器令牌不进 Agent 通道)。"""
+    def agent_view(self, review_id: str, full: bool = False) -> dict:
+        """Agent 状态视图。默认紧凑模式(省 token):状态+待处理意见+变化说明,
+        不含全部版本内容;full=True 才返回完整文档(不含浏览器令牌)。"""
         s = self._load(review_id)
         s.pop("url_token", None)
-        s["needs_action"] = any(f["status"] == "pending" for f in s["feedback"]) or \
-            s["status"] == "awaiting_review"
+        pending = [f for f in s["feedback"] if f["status"] == "pending"]
+        if not full:
+            return {
+                "review_id": s["review_id"], "title": s["title"], "type": s["type"],
+                "status": s["status"], "current_revision": s["current_revision"],
+                "needs_action": bool(pending) or s["status"] == "awaiting_review",
+                "pending_feedback": pending,
+                "feedback_total": len(s["feedback"]),
+                "latest_change_summary": s["revisions"][-1]["change_summary"],
+                "decisions": s["decisions"],
+                "context": s.get("context", {}),
+                "history_tail": s.get("history", [])[-5:],
+            }
+        s["needs_action"] = bool(pending) or s["status"] == "awaiting_review"
         return s
 
     def publish_revision(self, review_id: str, base_revision: int, content: dict,
