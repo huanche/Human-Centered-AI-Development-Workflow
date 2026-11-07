@@ -347,20 +347,25 @@ function renderHistory(s) {
   return d;
 }
 
-/* ---------- 长轮询:AI 发布新版后自动刷新 ---------- */
+/* ---------- 短轮询:不用长连接,兼容浏览器代理环境(代理会掐断挂起请求) ---------- */
 async function poll() {
+  let fails = 0;
   while (true) {
-    await new Promise(r => setTimeout(r, 8000));
+    await new Promise(r => setTimeout(r, 6000));
     if (!STATE) continue;
     try {
-      const sig = await api('/wait?t=' + encodeURIComponent(TOKEN)
-        + '&revision=' + STATE.current_revision
-        + '&feedback=' + STATE.feedback.filter(f => f.status === 'pending').length
-        + '&timeout=25&wait=1');
-      if (sig.status === 'changed') await load();
+      const s2 = await api('?t=' + encodeURIComponent(TOKEN));
+      fails = 0;
+      const changed =
+        s2.current_revision !== STATE.current_revision ||
+        (s2.feedback || []).length !== (STATE.feedback || []).length ||
+        (s2.decisions || []).length !== (STATE.decisions || []).length;
+      if (changed) { STATE = s2; render(); }
       else setLive(STATE.current_revision);
     } catch (e) {
-      if (STATE) setLive(STATE.current_revision, '⚠ 连接审核服务失败,将持续重试');
+      fails++;
+      if (STATE) setLive(STATE.current_revision,
+        fails >= 3 ? '⚠ 连接审核服务失败,将持续重试' : '自动更新中(网络重试 ' + fails + ')');
     }
   }
 }
