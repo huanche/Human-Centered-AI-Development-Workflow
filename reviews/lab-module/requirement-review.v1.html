@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>需求审核 · 编程实验模块(交互版)</title>
+<style>
+  :root { --ink:#1a2332; --muted:#5a6a7e; --line:#dde4ec; --bg:#f6f8fb; --card:#fff;
+          --green:#0a7d4f; --green-bg:#e8f5ee; --amber:#b45309; --amber-bg:#fdf3e3;
+          --red:#b3251e; --red-bg:#fdecea; --blue:#0b5cad; --blue-bg:#e8f1fa; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+         color:var(--ink); background:var(--bg); line-height:1.7; font-size:15px; }
+  .wrap { max-width:860px; margin:0 auto; padding:28px 20px 60px; }
+  header h1 { font-size:23px; margin:0 0 4px; }
+  .meta { color:var(--muted); font-size:13px; }
+
+  /* 步骤条 */
+  .steps { display:flex; gap:6px; margin:18px 0 22px; flex-wrap:wrap; }
+  .stp { flex:1; min-width:96px; text-align:center; font-size:12.5px; padding:7px 4px;
+         background:var(--card); border:1.5px solid var(--line); border-radius:8px;
+         color:var(--muted); cursor:default; }
+  .stp.on { border-color:var(--blue); color:var(--blue); background:var(--blue-bg); font-weight:600; }
+  .stp.done { border-color:var(--green); color:var(--green); }
+
+  section.pane { display:none; }
+  section.pane.on { display:block; }
+  h2 { font-size:19px; margin:0 0 4px; border-left:4px solid var(--blue); padding-left:10px; }
+  .why { color:var(--muted); font-size:13px; margin:4px 0 14px 14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:12px 0; }
+  .tag { display:inline-block; font-size:12.5px; padding:1px 10px; border-radius:14px; margin:2px 8px 2px 0; }
+  .t-green { background:var(--green-bg); color:var(--green); }
+  .t-amber { background:var(--amber-bg); color:var(--amber); }
+  .term { border-bottom:1.5px dotted var(--blue); cursor:help; color:var(--blue); }
+
+  /* 现状结构 */
+  .node { background:var(--card); border:1.5px solid var(--line); border-radius:8px;
+          padding:9px 16px; margin:0 auto; text-align:center; max-width:420px; }
+  .node.new { border-color:var(--green); background:var(--green-bg); }
+  .vline { width:2px; height:16px; background:var(--line); margin:0 auto; }
+  .gap { border:1.5px dashed var(--red); background:var(--red-bg); color:var(--red);
+         border-radius:8px; padding:8px 14px; font-size:13px; text-align:center; margin-top:12px; }
+
+  /* 线框 */
+  .wire { display:grid; grid-template-columns:1fr 1.2fr; gap:0; background:#fff;
+          border:2px solid var(--ink); border-radius:10px; overflow:hidden; }
+  .wire .pane2 { padding:14px; min-height:210px; }
+  .wire .left { border-right:1px dashed var(--line); background:#fbfcfe; }
+  .wline { background:#eef2f7; border-radius:5px; height:13px; margin:9px 0; }
+  .w60{width:60%}.w80{width:80%}.w40{width:40%}
+  .wbtn { display:inline-block; padding:4px 14px; border-radius:6px; font-size:13px; border:1.5px solid; margin-right:8px; }
+  .wbtn.run { border-color:var(--blue); color:var(--blue); }
+  .wbtn.sub { background:var(--green); border-color:var(--green); color:#fff; }
+
+  /* 泳道 */
+  .lane { display:flex; gap:10px; margin:8px 0; align-items:stretch; }
+  .who { flex:0 0 64px; display:flex; align-items:center; justify-content:center; border-radius:8px; font-weight:600; font-size:14px; }
+  .wt { background:var(--blue-bg); color:var(--blue); }
+  .ws { background:var(--green-bg); color:var(--green); }
+  .steps2 { display:flex; flex:1; gap:8px; flex-wrap:wrap; }
+  .step2 { flex:1; min-width:140px; background:var(--card); border:1px solid var(--line);
+           border-radius:8px; padding:7px 11px; font-size:13px; }
+  .step2 b { display:block; font-size:13.5px; }
+  .step2 .ex { color:var(--amber); font-size:12px; }
+
+  /* 技术决定 & 问题 */
+  .dec-row { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:13px 16px; margin:10px 0; }
+  .dec-row h4 { margin:0 0 4px; font-size:15px; }
+  .dec-row .desc { color:var(--muted); font-size:13px; }
+  .dec-row .why2 { color:var(--muted); font-size:13px; background:var(--blue-bg); border-radius:6px; padding:6px 10px; margin:8px 0; }
+  .optline { margin-top:8px; font-size:14px; }
+  .optline label { margin-right:18px; cursor:pointer; }
+  .optline .rec { color:var(--green); font-weight:600; }
+  textarea { width:100%; min-height:56px; margin-top:8px; border:1px solid var(--line);
+             border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13.5px; resize:vertical; }
+  .hidden { display:none; }
+  .issue-open { border-color:var(--amber); }
+
+  /* 底部导航 */
+  nav { display:flex; justify-content:space-between; margin-top:24px; gap:10px; }
+  button.btn { padding:9px 26px; border-radius:8px; border:1.5px solid var(--blue);
+               background:var(--card); color:var(--blue); font-size:14.5px; cursor:pointer; font-family:inherit; }
+  button.btn.primary { background:var(--blue); color:#fff; }
+  button.btn.ok { border-color:var(--green); color:var(--green); }
+  button.btn.mini { padding:5px 14px; font-size:13px; }
+  .btn:disabled { opacity:.4; cursor:default; }
+
+  /* 汇总页 */
+  #summary-box { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px; font-size:14px; white-space:pre-wrap; }
+  .status-pill { display:inline-block; padding:2px 12px; border-radius:20px; font-size:13px; font-weight:600; }
+  .sp-ok { background:var(--green-bg); color:var(--green); }
+  .sp-issue { background:var(--amber-bg); color:var(--amber); }
+  .mode-note { font-size:13px; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>编程实验模块 · 需求审核</h1>
+  <div class="meta">版本 v1 · 2026-11-07 · 分 6 步,每步 1~2 分 钟 · 你的每一次选择和批注都会保存,最后一步汇总提交</div>
+</header>
+
+<div class="steps" id="stepsbar"></div>
+
+<!-- ═══ 第 1 步:现状理解 ═══ -->
+<section class="pane" data-name="现状理解">
+  <h2>我对现有系统的理解</h2>
+  <p class="why">先确认这张图对不对——如果现状理解错了,后面全错。绿色 = 本次新增,红色虚线 = 现在缺的能力。</p>
+  <div class="card">
+    <p style="margin:2px 0 12px;font-size:14px">课程分两层:<b>课程 → 章节</b>。学生凭邀请码选课、看视频、手动"标记已学"。教师有一套现成的课程发布流程。</p>
+    <div class="node"><b>课程</b><small style="color:var(--muted)">邀请码 · 归属教师</small></div>
+    <div class="vline"></div>
+    <div class="node"><b>章节</b><small style="color:var(--muted)">目前只有视频内容;学完手动标记</small></div>
+    <div class="vline"></div>
+    <div class="node new"><b>🆕 编程实验</b><small style="color:var(--muted)">挂在章节下,与视频并列,复用发布流程</small></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px">
+      <div class="gap" style="flex:1">⚠ 缺口:平台没有任何<b>判题</b>能力(不能跑学生代码),需从零建</div>
+      <div class="gap" style="flex:1">⚠ 缺口:平台没有任何<b>作业/评分</b>数据,这是第一个评分功能</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 第 2 步:需求理解 ═══ -->
+<section class="pane" data-name="需求理解">
+  <h2>我对需求的理解(一句话)</h2>
+  <p class="why">这句话是整个项目的"宪法",请逐字确认。</p>
+  <div class="card" style="border-left:4px solid var(--green)">
+    <b>老师</b>在章节里布置动手编程实验;<b>学生</b>左边看任务说明、右边写代码;
+    点运行即时看结果,点提交<b>系统自动判分</b>;老师能看到每个学生做题的<b>全过程</b>。
+  </div>
+  <div class="card" style="font-size:14px">
+    <span class="tag t-green">本次做</span>实验挂章节下 · 左说明右编辑器页面 · 自动判分 · 过程时间线给老师<br>
+    <span class="tag t-amber">本次不做</span>多语言(仅 Python)· 防作弊 · 过程分折算总分 · 多文件大项目
+  </div>
+</section>
+
+<!-- ═══ 第 3 步:页面布局 ═══ -->
+<section class="pane" data-name="页面布局">
+  <h2>实验页面长什么样</h2>
+  <p class="why">确认这就是你说的"参考 LeetCode 交互布局"。灰色条代表文字内容,不是最终视觉。</p>
+  <div class="wire">
+    <div class="pane2 left">
+      <div style="font-size:12px;color:var(--muted)">左栏 · 任务说明</div>
+      <b style="font-size:15px">实验:两数之和</b>
+      <div style="font-size:12.5px;color:var(--muted)">截止:11月20日 · 最高分:—</div>
+      <div class="wline w80"></div><div class="wline"></div><div class="wline w60"></div>
+      <div style="font-size:13px;margin-top:10px"><b>示例</b></div>
+      <div class="wline w60"></div><div class="wline w40"></div>
+      <div style="font-size:13px;color:var(--blue);margin-top:12px">💬 问 AI 助教</div>
+    </div>
+    <div class="pane2">
+      <div style="font-size:12px;color:var(--muted)">右栏 · 代码编辑器</div>
+      <div style="background:#f4f6f8;border:1px solid var(--line);border-radius:6px;padding:9px;font-family:Consolas,monospace;font-size:12px;margin-top:6px">
+        <span style="color:#5a6a7e"># 代码框架已预填</span><br><span style="color:#0b5cad">def</span> two_sum(nums, target):
+      </div>
+      <div style="margin-top:10px"><span class="wbtn run">▶ 运行</span><span class="wbtn sub">提交评分</span></div>
+      <div style="margin-top:10px;background:#f0f4f0;border:1px solid var(--line);border-radius:6px;padding:8px;font-size:12px;color:var(--muted)">
+        结果区:"运行"看示例输出(不计分);"提交评分"显示 3/4 用例通过、得分 75、哪个没过
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 第 4 步:流程 ═══ -->
+<section class="pane" data-name="业务流程">
+  <h2>谁在什么时候做什么</h2>
+  <p class="why">三段流程,从左到右是时间顺序;橙色小字是出错时的处理。</p>
+  <div class="card">
+    <b style="font-size:13.5px;color:var(--blue)">老师布置</b>
+    <div class="lane"><div class="who wt">老师</div><div class="steps2">
+      <div class="step2"><b>① 新建实验</b>写说明、备测试用例<div class="ex">不设截止时间→不提醒</div></div>
+      <div class="step2"><b>② 发布</b>复用现有发布流程,学生即可见</div>
+    </div></div>
+    <b style="font-size:13.5px;color:var(--green)">学生做题</b>
+    <div class="lane"><div class="who ws">学生</div><div class="steps2">
+      <div class="step2"><b>③ 打开实验</b>代码框架已预填</div>
+      <div class="step2"><b>④ 运行调试</b>即时看输出,不计分<div class="ex">死循环→强制中断</div></div>
+      <div class="step2"><b>⑤ 提交评分</b>按通过率得分<div class="ex">可反复提交,取最高</div></div>
+      <div class="step2"><b>⑥ 问 AI 助教</b>记录进过程时间线</div>
+    </div></div>
+    <b style="font-size:13.5px;color:var(--blue)">老师查看</b>
+    <div class="lane"><div class="who wt">老师</div><div class="steps2">
+      <div class="step2"><b>⑦ 课程页学生列表</b>每人:最高分|提交次数;点名字看时间线(何时开始、改几次、问过什么)</div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ═══ 第 5 步:技术决定 ═══ -->
+<section class="pane" data-name="技术决定">
+  <h2>技术决定(我定的,你可否决)</h2>
+  <p class="why">判断这些需要工程经验,所以不要求你研究——每条一句话+原因。默认同意,觉得不对就选"重新考虑"并写一句哪里不对。</p>
+  <div class="dec-row" data-d="d1">
+    <h4>1 · 学生代码在<span class="term" data-def="一个隔离的保险箱环境,代码跑崩了也伤不到系统本身">"判题沙箱"</span>里运行</h4>
+    <div class="desc">相当于给每份学生代码一个一次性的隔离房间。</div>
+    <div class="why2">为什么:学生代码不可信必须隔离;自建轻量沙箱约百行代码;第三方服务会把学生代码送出内网。</div>
+    <div class="optline"><label><input type="radio" name="d1" value="ok" checked> 同意</label><label><input type="radio" name="d1" value="reject"> 重新考虑</label></div>
+    <textarea class="hidden" placeholder="哪里不对?一句话即可"></textarea>
+  </div>
+  <div class="dec-row" data-d="d2">
+    <h4>2 · 编辑器用现成组件 CodeMirror</h4>
+    <div class="desc">相当于"代码用的输入框",好比写作用 Word 而非自造文字处理器。</div>
+    <div class="why2">为什么:轻、快,教学代码量足够;更重的方案体验提升小、加载慢。</div>
+    <div class="optline"><label><input type="radio" name="d2" value="ok" checked> 同意</label><label><input type="radio" name="d2" value="reject"> 重新考虑</label></div>
+    <textarea class="hidden" placeholder="哪里不对?一句话即可"></textarea>
+  </div>
+  <div class="dec-row" data-d="d3">
+    <h4>3 · 评分数据新建规范表存储</h4>
+    <div class="desc">谁的实验、得多少分、提交几次,都有据可查。</div>
+    <div class="why2">为什么:评分数据结构复杂,不适合塞进现有宽松格式;规范存储才能支撑以后出成绩单。</div>
+    <div class="optline"><label><input type="radio" name="d3" value="ok" checked> 同意</label><label><input type="radio" name="d3" value="reject"> 重新考虑</label></div>
+    <textarea class="hidden" placeholder="哪里不对?一句话即可"></textarea>
+  </div>
+  <div class="dec-row" data-d="d4">
+    <h4>4 · 学生在平台网页做实验;老师查看并入现有课程页</h4>
+    <div class="desc">不新增独立入口,沿现有学习路径即可到达。</div>
+    <div class="why2">为什么:重交互页面适合网页端;老师已在课程页看学习数据,不再加页面。</div>
+    <div class="optline"><label><input type="radio" name="d4" value="ok" checked> 同意</label><label><input type="radio" name="d4" value="reject"> 重新考虑</label></div>
+    <textarea class="hidden" placeholder="哪里不对?一句话即可"></textarea>
+  </div>
+</section>
+
+<!-- ═══ 第 6 步:三个问题 ═══ -->
+<section class="pane" data-name="三个问题">
+  <h2>需要你拍板的 3 个问题</h2>
+  <p class="why">每题绿色为推荐,蓝框说明"对你的影响"。也可以都不选,直接在下面写自己的想法。</p>
+
+  <div class="dec-row" data-q="q1">
+    <h4>Q1 · 第一版先支持哪门语言?</h4>
+    <div class="optline">
+      <label><input type="radio" name="q1" value="python"> <span class="rec">仅 Python(推荐)</span></label>
+      <label><input type="radio" name="q1" value="python-js"> Python + JavaScript</label>
+    </div>
+    <div class="why2" style="margin-top:8px">影响:选 Python 最快上线,以后加语言不动架构;加 JavaScript 第一版明显更晚上线。</div>
+    <textarea class="hidden" placeholder="想补充什么?"></textarea>
+  </div>
+
+  <div class="dec-row" data-q="q2">
+    <h4>Q2 · "过程性评价"怎么呈现?</h4>
+    <div class="optline">
+      <label><input type="radio" name="q2" value="show"> <span class="rec">先展示过程,不打分(推荐)</span></label>
+      <label><input type="radio" name="q2" value="score"> 过程自动打分并入总分</label>
+    </div>
+    <div class="why2" style="margin-top:8px">影响:前者老师多看两三分钟时间线但判断有依据;后者省事但"什么行为值几分"没有依据,可能失真、被刷。</div>
+    <textarea class="hidden" placeholder="想补充什么?"></textarea>
+  </div>
+
+  <div class="dec-row" data-q="q3">
+    <h4>Q3 · 第一版要不要防作弊(禁粘贴、切屏检测)?</h4>
+    <div class="optline">
+      <label><input type="radio" name="q3" value="no"> <span class="rec">不做(推荐)</span></label>
+      <label><input type="radio" name="q3" value="basic"> 做基础限制</label>
+    </div>
+    <div class="why2" style="margin-top:8px">影响:不做→学生体验好,过程时间线本身会暴露异常(如 0 次运行直接满分);做→成绩更可信但开发更慢、体验变差。若实验成绩要计入总评,建议选"做"。</div>
+    <textarea class="hidden" placeholder="想补充什么?"></textarea>
+  </div>
+</section>
+
+<!-- ═══ 第 7 步:汇总 ═══ -->
+<section class="pane" data-name="汇总提交">
+  <h2>审核结果汇总</h2>
+  <p class="why">检查下面的汇总,没问题就提交。提交后我在对话里给你变更清单。</p>
+  <div id="summary-box">(尚无内容)</div>
+  <div class="mode-note" id="mode-note">检测服务中…</div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn primary" id="btn-submit">提交审核意见</button>
+    <button class="btn ok hidden" id="btn-download">导出意见文件(备用)</button>
+    <button class="btn hidden" id="btn-copy">复制意见(备用)</button>
+  </div>
+</section>
+
+<nav>
+  <button class="btn" id="prev">← 上一步</button>
+  <button class="btn primary" id="next">下一步 →</button>
+</nav>
+
+</div>
+<script>
+(function(){
+  var KEY='hc-aidw-lab-review-v1';
+  var panes=[].slice.call(document.querySelectorAll('section.pane'));
+  var bar=document.getElementById('stepsbar');
+  var cur=0, state=load();
+
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||{} }catch(e){ return {} } }
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(state)) }catch(e){} }
+
+  panes.forEach(function(p,i){
+    var d=document.createElement('div'); d.className='stp'; d.textContent=(i+1)+' '+p.dataset.name;
+    bar.appendChild(d);
+  });
+
+  function show(i){
+    cur=Math.max(0,Math.min(panes.length-1,i));
+    panes.forEach(function(p,j){ p.classList.toggle('on',j===cur) });
+    [].forEach.call(bar.children,function(s,j){
+      s.classList.toggle('on',j===cur); s.classList.toggle('done',j<cur);
+    });
+    document.getElementById('prev').disabled=(cur===0);
+    document.getElementById('next').textContent=(cur===panes.length-1?'(已在最后一步)':'下一步 →');
+    if(panes[cur].dataset.name==='汇总提交') renderSummary();
+    window.scrollTo(0,0);
+  }
+
+  /* 批注框:选"重新考虑/有问题"或点击textarea出现逻辑 */
+  document.querySelectorAll('.optline input[type=radio]').forEach(function(r){
+    r.addEventListener('change',function(){
+      var row=r.closest('.dec-row'), ta=row.querySelector('textarea');
+      var needIssue = r.value==='reject';
+      ta.classList.toggle('hidden', !needIssue && !ta.value);
+      row.classList.toggle('issue-open', needIssue);
+      collect(); save();
+    });
+  });
+  document.querySelectorAll('.dec-row textarea').forEach(function(ta){
+    ta.addEventListener('input',function(){ collect(); save(); });
+  });
+
+  function collect(){
+    state.answers={}; state.decisions={}; state.comments=[];
+    document.querySelectorAll('.dec-row').forEach(function(row){
+      var sel=row.querySelector('input[type=radio]:checked');
+      var ta=row.querySelector('textarea'), note=ta?ta.value.trim():'';
+      var isQ=row.dataset.q;
+      if(isQ){
+        if(sel) state.answers[row.dataset.q]={choice:sel.value, note:note};
+      }else{
+        state.decisions[row.dataset.d]={verdict: sel?sel.value:'ok', note:note};
+      }
+      if(isQ && !sel && note) state.comments.push({target:row.dataset.q, text:note});
+    });
+    state.updatedAt=new Date().toISOString();
+    return state;
+  }
+
+  function nameMap(v){
+    return {
+      q1:{python:'仅 Python','python-js':'Python + JavaScript'},
+      q2:{show:'先展示过程不打分',score:'过程自动打分'},
+      q3:{no:'不做防作弊',basic:'做基础限制'}
+    }[v.split('|')[0]] ? null : null;
+  }
+  var LABELS={
+    q1:{python:'仅 Python','python-js':'Python + JavaScript'},
+    q2:{show:'先展示过程不打分',score:'过程自动打分并入总分'},
+    q3:{no:'不做防作弊',basic:'做基础限制'},
+    d1:'判题沙箱', d2:'CodeMirror 编辑器', d3:'评分规范表', d4:'网页端+并入课程页'
+  };
+
+  function renderSummary(){
+    collect();
+    var lines=[];
+    var issues=0;
+    Object.keys(state.decisions||{}).forEach(function(k){
+      var d=state.decisions[k];
+      if(d.verdict==='reject') issues++;
+      lines.push('技术·'+LABELS[k]+' → '+(d.verdict==='reject'?'❌ 要求重新考虑'+(d.note?':'+d.note:''):'✅ 同意'));
+    });
+    Object.keys(state.answers||{}).forEach(function(k){
+      var a=state.answers[k];
+      if(!a.choice) issues++;
+      lines.push('Q'+k.slice(1)+' → '+(a.choice?('选:'+LABELS[k][a.choice]):'⚠ 未选择')+(a.note?' | 补充:'+a.note:''));
+    });
+    if(issues===0) lines.unshift('状态:全部有明确结论 ✅');
+    else lines.unshift('状态:有 '+issues+' 处待你补齐(未选/要求重审)');
+    document.getElementById('summary-box').textContent=lines.join('\n');
+  }
+
+  /* 服务检测 */
+  var serverMode=false;
+  fetch('ping',{cache:'no-store'}).then(function(r){return r.ok}).catch(function(){return false})
+    .then(function(ok){
+      serverMode=!!ok;
+      document.getElementById('mode-note').textContent = ok
+        ? '✅ 已连接本地审核服务:意见将直接保存到项目文件'
+        : '当前是双击打开模式:请用下方"导出/复制"按钮把意见发我(或让我启动本地服务后刷新)';
+      if(!ok){ document.getElementById('btn-download').classList.remove('hidden');
+               document.getElementById('btn-copy').classList.remove('hidden'); }
+    });
+
+  function payload(){ collect(); return JSON.stringify({doc:'lab-module', version:'v1', review:state}, null, 2); }
+
+  document.getElementById('btn-submit').addEventListener('click',function(){
+    var p=payload();
+    if(!serverMode){
+      document.getElementById('btn-download').click();
+      return;
+    }
+    fetch('submit',{method:'POST',headers:{'Content-Type':'application/json'},body:p})
+      .then(function(r){return r.json()})
+      .then(function(res){
+        if(res.ok) document.getElementById('mode-note').textContent='✅ 意见已保存:'+res.saved+'。请回到对话告诉我"意见已提交"。';
+        else throw new Error('save failed');
+      })
+      .catch(function(){
+        document.getElementById('btn-download').classList.remove('hidden');
+        document.getElementById('btn-download').click();
+      });
+  });
+  document.getElementById('btn-download').addEventListener('click',function(){
+    var blob=new Blob([payload()],{type:'application/json'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='lab-review-feedback.json'; a.click();
+  });
+  document.getElementById('btn-copy').addEventListener('click',function(){
+    navigator.clipboard.writeText(payload()).then(function(){
+      document.getElementById('mode-note').textContent='✅ 已复制到剪贴板,直接粘贴到对话里发我。';
+    });
+  });
+
+  document.getElementById('prev').addEventListener('click',function(){ show(cur-1) });
+  document.getElementById('next').addEventListener('click',function(){ show(cur+1) });
+
+  show(0);
+})();
+</script>
+</body>
+</html>
